@@ -13,7 +13,7 @@ MediFirst 홈·미들웨어·로그인과 **완전 분리**. API 라우트만 �
 1. **Vercel** 새 프로젝트 생성 → 이 폴더(`naver-oauth-app`)를 **Root Directory**로 연결.
 2. **환경 변수** 설정:
    - `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
-   - `NAVER_REDIRECT_URI` = `https://<이앱도메인>/api/callback` (예: `https://naver-oauth-xxx.vercel.app/api/callback`)
+   - `NAVER_REDIRECT_URI` = `https://<이앱도메인>/api/callback` (예: `https://naver-oauth-xxx.vercel.app/api/callback`) — 붙여넣기 시 **끝 줄바꿈 제거**
    - `NAVER_OAUTH_SUPABASE_URL`, `NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY` (kakkaobot Supabase)
    - `OAUTH_STATE_SECRET` (kakkaobot과 동일 권장)
    - (선택) `OAUTH_HOME_LINK` = 연동 완료 후 "돌아가기" 링크 (기본: medifirstall.vercel.app)
