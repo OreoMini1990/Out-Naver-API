@@ -33,7 +33,7 @@ export interface SaveTokenParams {
   scope?: string | null;
 }
 
-/** scope 컬럼 없어도 동작. ON CONFLICT 미사용 → user_id unique 제약 없어도 동작 */
+/** user_id당 is_active=true 1개만 허용(uq_naver_oauth_tokens_one_active). 기존 활성 행 비활성화 후 새 행 INSERT */
 export async function saveToken(params: SaveTokenParams): Promise<void> {
   const supabase = getSupabase();
   const now = new Date().toISOString();
@@ -46,21 +46,16 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
   };
   if (params.userName?.trim()) base.user_name = params.userName.trim();
 
-  const { data: existing } = await supabase
+  // 1) 해당 user_id의 기존 행을 모두 비활성화 (unique: user_id당 is_active=true 1개만 허용)
+  const { error: updateError } = await supabase
     .from('naver_oauth_tokens')
-    .select('user_id')
-    .eq('user_id', params.userId)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('naver_oauth_tokens')
-      .update(base)
-      .eq('user_id', params.userId);
-    if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
-    return;
+    .update({ is_active: false, updated_at: now })
+    .eq('user_id', params.userId);
+  if (updateError) {
+    console.warn('[saveToken] 기존 토큰 비활성화 실패(무시 후 진행):', updateError.message);
   }
 
+  // 2) 새 토큰 행 INSERT (is_active=true)
   const insertRow = { ...base, user_id: params.userId };
   const { error } = await supabase
     .from('naver_oauth_tokens')
