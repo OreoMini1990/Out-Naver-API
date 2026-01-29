@@ -5,15 +5,9 @@
  * 홈·미들웨어·로그인과 완전 무관.
  */
 
+import { getRedirectUri } from '@/lib/redirectUri';
 import { createState } from '@/lib/state';
 import { NextRequest, NextResponse } from 'next/server';
-
-function getRedirectUri(): string | null {
-  if (process.env.NAVER_REDIRECT_URI) return process.env.NAVER_REDIRECT_URI;
-  const v = process.env.VERCEL_URL;
-  if (v) return `https://${v}/api/callback`;
-  return null;
-}
 
 export async function GET(request: NextRequest) {
   const userId =

@@ -5,15 +5,9 @@
  */
 
 import { saveToken } from '@/lib/db';
+import { getRedirectUri } from '@/lib/redirectUri';
 import { verifyState } from '@/lib/state';
 import { NextRequest, NextResponse } from 'next/server';
-
-function getRedirectUri(): string | null {
-  if (process.env.NAVER_REDIRECT_URI) return process.env.NAVER_REDIRECT_URI;
-  const v = process.env.VERCEL_URL;
-  if (v) return `https://${v}/api/callback`;
-  return null;
-}
 
 function htmlErr(msg: string): string {
   const home = process.env.OAUTH_HOME_LINK || 'https://medifirstall.vercel.app';
