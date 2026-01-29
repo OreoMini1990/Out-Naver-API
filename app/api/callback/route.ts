@@ -162,11 +162,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let hadDraft = false;
   const draftId = payload.draftId?.trim();
   if (draftId) {
-    hadDraft = await setDraftPendingSubmit(userId, draftId);
+    await setDraftPendingSubmit(userId, draftId);
   }
+  const hadDraft = !!draftId;
 
   return new NextResponse(htmlOk(hadDraft), {
     status: 200,
