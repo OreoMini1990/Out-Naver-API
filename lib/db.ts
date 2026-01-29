@@ -33,23 +33,37 @@ export interface SaveTokenParams {
   scope?: string | null;
 }
 
-/** scope 컬럼 없어도 동작하도록 저장 시 제외 (필요 시 테이블에 추가 후 포함 가능) */
+/** scope 컬럼 없어도 동작. ON CONFLICT 미사용 → user_id unique 제약 없어도 동작 */
 export async function saveToken(params: SaveTokenParams): Promise<void> {
   const supabase = getSupabase();
   const now = new Date().toISOString();
-  const row: Record<string, unknown> = {
-    user_id: params.userId,
+  const base: Record<string, unknown> = {
     access_token: params.accessToken,
     refresh_token: params.refreshToken,
     expires_at: params.expiresAt,
     is_active: true,
     updated_at: now,
   };
-  if (params.userName?.trim()) row.user_name = params.userName.trim();
+  if (params.userName?.trim()) base.user_name = params.userName.trim();
 
+  const { data: existing } = await supabase
+    .from('naver_oauth_tokens')
+    .select('user_id')
+    .eq('user_id', params.userId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from('naver_oauth_tokens')
+      .update(base)
+      .eq('user_id', params.userId);
+    if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
+    return;
+  }
+
+  const insertRow = { ...base, user_id: params.userId };
   const { error } = await supabase
     .from('naver_oauth_tokens')
-    .upsert(row, { onConflict: 'user_id' });
-
+    .insert(insertRow);
   if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
 }
