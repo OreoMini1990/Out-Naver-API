@@ -33,6 +33,7 @@ export interface SaveTokenParams {
   scope?: string | null;
 }
 
+/** scope 컬럼 없어도 동작하도록 저장 시 제외 (필요 시 테이블에 추가 후 포함 가능) */
 export async function saveToken(params: SaveTokenParams): Promise<void> {
   const supabase = getSupabase();
   const now = new Date().toISOString();
@@ -41,7 +42,6 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
     access_token: params.accessToken,
     refresh_token: params.refreshToken,
     expires_at: params.expiresAt,
-    scope: params.scope ?? null,
     is_active: true,
     updated_at: now,
   };
