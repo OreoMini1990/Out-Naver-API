@@ -9,15 +9,21 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const redirectUri = getRedirectUri();
   const v = process.env.VERCEL_URL;
+  const hasSupabaseUrl = !!(
+    process.env.NAVER_OAUTH_SUPABASE_URL || process.env.SUPABASE_URL
+  );
+  const hasSupabaseKey = !!(
+    process.env.NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NAVER_OAUTH_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY
+  );
   const out = {
     redirect_uri: redirectUri ?? '(NAVER_REDIRECT_URI 미설정, VERCEL_URL 없음)',
     has_client_id: !!process.env.NAVER_CLIENT_ID,
     has_client_secret: !!process.env.NAVER_CLIENT_SECRET,
-    has_supabase_url: !!process.env.NAVER_OAUTH_SUPABASE_URL,
-    has_supabase_key: !!(
-      process.env.NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NAVER_OAUTH_SUPABASE_ANON_KEY
-    ),
+    has_supabase_url: hasSupabaseUrl,
+    has_supabase_key: hasSupabaseKey,
     vercel_url: v ?? null,
   };
   return NextResponse.json(out);

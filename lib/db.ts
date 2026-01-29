@@ -9,13 +9,16 @@ let _client: SupabaseClient | null = null;
 
 function getSupabase(): SupabaseClient {
   if (_client) return _client;
-  const url = process.env.NAVER_OAUTH_SUPABASE_URL;
+  const url =
+    process.env.NAVER_OAUTH_SUPABASE_URL || process.env.SUPABASE_URL;
   const key =
     process.env.NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NAVER_OAUTH_SUPABASE_ANON_KEY;
+    process.env.NAVER_OAUTH_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
   if (!url || !key)
     throw new Error(
-      'NAVER_OAUTH_SUPABASE_URL, NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY(또는 ANON) 필요.'
+      'NAVER_OAUTH_SUPABASE_URL(또는 SUPABASE_URL), NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY(또는 SUPABASE_SERVICE_ROLE_KEY) 필요.'
     );
   _client = createClient(url, key);
   return _client;
