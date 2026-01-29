@@ -69,9 +69,9 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
 }
 
 /**
- * 연동 직후 대기 중인 질문 자동 등록용.
- * cafe_post_drafts 해당 건을 pending_submit 으로 바꿔, 서버 processPendingSubmits 가 처리하도록 함.
- * 실제 반영 여부 확인 후 반환 (0건이면 false).
+ * 연동 직후 대기 중인 질문 즉시 처리용.
+ * scheduled_at = now 로 바꿔, 서버 워커가 다음 주기에 바로 처리하도록 함.
+ * (scheduled_at 컬럼 없으면 status·updated_at만 갱신)
  */
 export async function setDraftPendingSubmit(
   userId: string,
@@ -79,11 +79,13 @@ export async function setDraftPendingSubmit(
 ): Promise<boolean> {
   try {
     const supabase = getSupabase();
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('cafe_post_drafts')
       .update({
         status: 'pending_submit',
-        updated_at: new Date().toISOString(),
+        updated_at: now,
+        scheduled_at: now,
       })
       .eq('draft_id', draftId)
       .eq('user_id', userId)

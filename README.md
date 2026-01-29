@@ -17,7 +17,6 @@ MediFirst 홈·미들웨어·로그인과 **완전 분리**. API 라우트만 �
    - `NAVER_OAUTH_SUPABASE_URL`, `NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY` — **kakkaobot 서버와 동일한** Supabase 프로젝트(URL·키)여야 자동 등록이 됩니다.
    - `OAUTH_STATE_SECRET` (kakkaobot과 동일 권장)
    - (선택) `OAUTH_HOME_LINK` = 연동 완료 후 "돌아가기" 링크 (기본: medifirstall.vercel.app)
-   - (선택) `OAUTH_SERVER_PROCESS_URL` = 서버 즉시 처리 URL (예: `http://192.168.0.15:5002/api/naver-oauth/process-pending`) — 설정 시 연동 완료 페이지에 "자동 등록이 안 되면 여기를 눌러 보세요" 링크가 표시됩니다.
 3. **네이버 개발자센터** 앱 **Callback URL**에 `https://<이앱도메인>/api/callback` 를 **그대로** 등록.  
    - `redirect_uri`와 **완전히 일치**해야 함. (프로토콜·도메인·경로· trailing slash 여부까지)
 4. **kakkaobot**:
@@ -36,7 +35,14 @@ MediFirst 홈·미들웨어·로그인과 **완전 분리**. API 라우트만 �
 
 1. **같은 Supabase인지 확인**: Vercel의 `NAVER_OAUTH_SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`가 kakkaobot 서버 `.env`의 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`와 **동일한 프로젝트**인지 확인. 다르면 토큰은 Vercel DB에만 있고 서버는 토큰을 못 찾습니다.
 2. **서버 즉시 처리**: kakkaobot 서버가 떠 있는 PC/같은 네트워크에서 브라우저로 `http://<서버주소>:5002/api/naver-oauth/process-pending` 을 열면 대기 중인 질문을 한 번 즉시 처리합니다. 서버 로그에 `[백그라운드 재개]` 로그가 찍히는지 확인.
-3. **Vercel에 `OAUTH_SERVER_PROCESS_URL` 설정**: 위 URL을 설정하면 연동 완료 페이지에 "자동 등록이 안 되면 여기를 눌러 보세요" 링크가 나옵니다 (같은 네트워크에서만 접속 가능).
+
+## 배포 후 연동 완료 문구가 안 바뀔 때
+
+- **코드에는** "자동 등록이 안 되면…" 문구/링크가 이미 제거되어 있습니다.
+- **그대로 보이면** → Vercel에 최신 빌드가 반영되지 않은 상태일 수 있습니다.
+1. **Git push** 후 Vercel 자동 배포가 끝났는지 Vercel 대시보드에서 확인.
+2. **수동 재배포**: Vercel 프로젝트 → Deployments → 최신 배포 옆 ⋮ → **Redeploy**.
+3. **캐시**: 배포 후에도 이전 페이지가 보이면 시크릿 창으로 열거나 **강력 새로고침**(Ctrl+Shift+R) 후 다시 OAuth 연동 시도.
 
 ## 로컬
 
