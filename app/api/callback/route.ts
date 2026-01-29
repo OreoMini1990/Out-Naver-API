@@ -17,7 +17,7 @@ function getRedirectUri(): string | null {
 
 function htmlErr(msg: string): string {
   const home = process.env.OAUTH_HOME_LINK || 'https://medifirstall.vercel.app';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><h2>연동 실패</h2><p>${msg}</p><p><a href="${home}">돌아가기</a></p></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><h2>연동 실패</h2><p>${msg}</p><p><a href="${home}">돌아가기</a></p><p style="margin-top:1.5rem;font-size:0.9em;color:#666">설정 확인: <a href="/api/diag">/api/diag</a> 에서 redirect_uri를 확인하고, 네이버 앱 Callback URL과 <strong>완전히 일치</strong>하는지 봐 주세요.</p></body></html>`;
 }
 
 function htmlOk(): string {
@@ -29,9 +29,11 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state');
   const err = request.nextUrl.searchParams.get('error');
+  const errDesc = request.nextUrl.searchParams.get('error_description');
 
   if (err) {
-    return new NextResponse(htmlErr(`네이버 연동 오류: ${err}`), {
+    const msg = errDesc ? `네이버 연동 오류: ${err} (${errDesc})` : `네이버 연동 오류: ${err}`;
+    return new NextResponse(htmlErr(msg), {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -98,7 +100,15 @@ export async function GET(request: NextRequest) {
   }
 
   if (!tokenRes.ok) {
-    return new NextResponse(htmlErr('토큰 발급 실패. 다시 시도해 주세요.'), {
+    let tokenErrMsg = '토큰 발급 실패. 다시 시도해 주세요.';
+    try {
+      const errBody = (await tokenRes.json()) as { error?: string; error_description?: string };
+      if (errBody.error_description) tokenErrMsg = `토큰 발급 실패: ${errBody.error_description}`;
+      else if (errBody.error) tokenErrMsg = `토큰 발급 실패: ${errBody.error}`;
+    } catch {
+      /* ignore */
+    }
+    return new NextResponse(htmlErr(tokenErrMsg), {
       status: 502,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
