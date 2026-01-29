@@ -3,8 +3,9 @@
  */
 
 export function getRedirectUri(): string | null {
-  if (process.env.NAVER_REDIRECT_URI) return process.env.NAVER_REDIRECT_URI;
-  const v = process.env.VERCEL_URL;
+  const fromEnv = process.env.NAVER_REDIRECT_URI?.trim();
+  if (fromEnv) return fromEnv;
+  const v = process.env.VERCEL_URL?.trim();
   if (v) return `https://${v}/api/callback`;
   return null;
 }
