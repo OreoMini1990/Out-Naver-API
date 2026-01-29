@@ -4,7 +4,7 @@
  * 홈·미들웨어·로그인과 완전 무관.
  */
 
-import { saveToken } from '@/lib/db';
+import { saveToken, setDraftPendingSubmit } from '@/lib/db';
 import { getRedirectUri } from '@/lib/redirectUri';
 import { verifyState } from '@/lib/state';
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,9 +14,12 @@ function htmlErr(msg: string): string {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><h2>연동 실패</h2><p>${msg}</p><p><a href="${home}">돌아가기</a></p><p style="margin-top:1.5rem;font-size:0.9em;color:#666">설정 확인: <a href="/api/diag">/api/diag</a> 에서 redirect_uri를 확인하고, 네이버 앱 Callback URL과 <strong>완전히 일치</strong>하는지 봐 주세요.</p></body></html>`;
 }
 
-function htmlOk(): string {
+function htmlOk(hadDraft: boolean): string {
   const home = process.env.OAUTH_HOME_LINK || 'https://medifirstall.vercel.app';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>연동 완료</title><style>body{font-family:system-ui,sans-serif;max-width:420px;margin:60px auto;padding:24px;text-align:center;}h2{color:#03c75a;}a{color:#03c75a;}</style></head><body><h2>네이버 계정 연동 완료</h2><p>연동이 완료되었습니다. 카카오톡으로 돌아가서 <strong>다시 !질문</strong>을 입력해 주세요.</p><p><a href="${home}">돌아가기</a></p></body></html>`;
+  const msg = hadDraft
+    ? '연동이 완료되었습니다. 이전에 입력한 질문이 <strong>자동으로 등록</strong>됩니다. 잠시 후 카카오톡에서 안내를 확인해 주세요.'
+    : '연동이 완료되었습니다. 카카오톡으로 돌아가서 <strong>!질문</strong>을 입력해 주세요.';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>연동 완료</title><style>body{font-family:system-ui,sans-serif;max-width:420px;margin:60px auto;padding:24px;text-align:center;}h2{color:#03c75a;}a{color:#03c75a;}</style></head><body><h2>네이버 계정 연동 완료</h2><p>${msg}</p><p><a href="${home}">돌아가기</a></p></body></html>`;
 }
 
 export async function GET(request: NextRequest) {
@@ -159,7 +162,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return new NextResponse(htmlOk(), {
+  let hadDraft = false;
+  const draftId = payload.draftId?.trim();
+  if (draftId) {
+    hadDraft = await setDraftPendingSubmit(userId, draftId);
+  }
+
+  return new NextResponse(htmlOk(hadDraft), {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });

@@ -67,3 +67,28 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
     .insert(insertRow);
   if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
 }
+
+/**
+ * 연동 직후 대기 중인 질문 자동 등록용.
+ * cafe_post_drafts 해당 건을 pending_submit 으로 바꿔, 서버 processPendingSubmits 가 처리하도록 함.
+ * 실패 시 예외 없이 false 반환 (베스트 에포트).
+ */
+export async function setDraftPendingSubmit(
+  userId: string,
+  draftId: string
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from('cafe_post_drafts')
+      .update({
+        status: 'pending_submit',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('draft_id', draftId)
+      .eq('user_id', userId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
