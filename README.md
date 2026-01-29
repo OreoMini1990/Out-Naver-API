@@ -17,10 +17,18 @@ MediFirst 홈·미들웨어·로그인과 **완전 분리**. API 라우트만 �
    - `NAVER_OAUTH_SUPABASE_URL`, `NAVER_OAUTH_SUPABASE_SERVICE_ROLE_KEY` (kakkaobot Supabase)
    - `OAUTH_STATE_SECRET` (kakkaobot과 동일 권장)
    - (선택) `OAUTH_HOME_LINK` = 연동 완료 후 "돌아가기" 링크 (기본: medifirstall.vercel.app)
-3. **네이버 개발자센터** 앱 Callback URL에 `https://<이앱도메인>/api/callback` 등록.
+3. **네이버 개발자센터** 앱 **Callback URL**에 `https://<이앱도메인>/api/callback` 를 **그대로** 등록.  
+   - `redirect_uri`와 **완전히 일치**해야 함. (프로토콜·도메인·경로· trailing slash 여부까지)
 4. **kakkaobot**:
    - `NAVER_OAUTH_BASE_URL` = `https://<이앱도메인>`
    - `NAVER_OAUTH_START_PATH` = `/api/start`
+
+## 연동 실패 / "로그인할 수 없음" 시
+
+1. **`/api/diag`** 접속 → `redirect_uri` 확인.  
+2. **네이버 앱** Callback URL이 위 `redirect_uri`와 **완전히 동일**한지 확인.  
+3. Vercel **환경 변수** `NAVER_REDIRECT_URI`를 쓰는 경우, `NAVER_REDIRECT_URI`와 네이버 앱 Callback URL이 같아야 함.  
+4. 콜백 실패 시 표시되는 `error` / `error_description` 메시지 확인.
 
 ## 로컬
 
