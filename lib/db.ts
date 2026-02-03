@@ -33,33 +33,23 @@ export interface SaveTokenParams {
   scope?: string | null;
 }
 
-/** user_id당 is_active=true 1개만 허용(uq_naver_oauth_tokens_one_active). 기존 활성 행 비활성화 후 새 행 INSERT */
+/** user_id 기존 행 삭제 후 신규 저장 (uq_naver_oauth_tokens_one_active 제약 오류 방지) */
 export async function saveToken(params: SaveTokenParams): Promise<void> {
   const supabase = getSupabase();
   const now = new Date().toISOString();
-  const base: Record<string, unknown> = {
+  const row: Record<string, unknown> = {
+    user_id: params.userId,
     access_token: params.accessToken,
     refresh_token: params.refreshToken,
     expires_at: params.expiresAt,
+    scope: params.scope ?? null,
     is_active: true,
     updated_at: now,
   };
-  if (params.userName?.trim()) base.user_name = params.userName.trim();
+  if (params.userName?.trim()) row.user_name = params.userName.trim();
 
-  // 1) 해당 user_id의 기존 행을 모두 비활성화 (unique: user_id당 is_active=true 1개만 허용)
-  const { error: updateError } = await supabase
-    .from('naver_oauth_tokens')
-    .update({ is_active: false, updated_at: now })
-    .eq('user_id', params.userId);
-  if (updateError) {
-    console.warn('[saveToken] 기존 토큰 비활성화 실패(무시 후 진행):', updateError.message);
-  }
-
-  // 2) 새 토큰 행 INSERT (is_active=true)
-  const insertRow = { ...base, user_id: params.userId };
-  const { error } = await supabase
-    .from('naver_oauth_tokens')
-    .insert(insertRow);
+  await supabase.from('naver_oauth_tokens').delete().eq('user_id', params.userId);
+  const { error } = await supabase.from('naver_oauth_tokens').insert(row);
   if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
 }
 
