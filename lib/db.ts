@@ -33,7 +33,7 @@ export interface SaveTokenParams {
   scope?: string | null;
 }
 
-/** user_id 기존 행 삭제 후 신규 저장 (uq_naver_oauth_tokens_one_active 제약 오류 방지) */
+/** user_id 기존 행 삭제 후 신규 저장. 동시 요청 시 재시도 (최대 4회) */
 export async function saveToken(params: SaveTokenParams): Promise<void> {
   const supabase = getSupabase();
   const now = new Date().toISOString();
@@ -42,15 +42,23 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
     access_token: params.accessToken,
     refresh_token: params.refreshToken,
     expires_at: params.expiresAt,
-    scope: params.scope ?? null,
     is_active: true,
     updated_at: now,
   };
   if (params.userName?.trim()) row.user_name = params.userName.trim();
 
-  await supabase.from('naver_oauth_tokens').delete().eq('user_id', params.userId);
-  const { error } = await supabase.from('naver_oauth_tokens').insert(row);
-  if (error) throw new Error('토큰 저장 실패: ' + (error.message || error.code));
+  const delays = [0, 200, 500, 1000];
+  for (let i = 0; i < delays.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, delays[i]));
+
+    await supabase.from('naver_oauth_tokens').delete().eq('user_id', params.userId);
+    const { error } = await supabase.from('naver_oauth_tokens').insert(row);
+    if (!error) return;
+
+    const isDup = error.code === '23505' || /duplicate|uq_naver_oauth_tokens_one_active/i.test(error.message || '');
+    if (isDup && i < delays.length - 1) continue;
+    throw new Error('토큰 저장 실패: ' + (error.message || error.code));
+  }
 }
 
 /**
