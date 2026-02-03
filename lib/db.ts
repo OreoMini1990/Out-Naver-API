@@ -46,6 +46,7 @@ export async function saveToken(params: SaveTokenParams): Promise<void> {
     updated_at: now,
   };
   if (params.userName?.trim()) row.user_name = params.userName.trim();
+  if (params.scope != null) row.scope = params.scope;
 
   const delays = [0, 200, 500, 1000];
   for (let i = 0; i < delays.length; i++) {
